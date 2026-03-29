@@ -1,13 +1,14 @@
 name: Build and Release
 
 on:
-  push:
-    tags:
-      - 'v*'  # Trigger on version tags like v1.0.0
+  release:
+    types: [published]
 
 jobs:
-  build:
+  build_and_upload:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -21,53 +22,52 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew clean build -x test
+      - name: Build with Gradle (skip tests and problematic adapter tasks)
+        run: ./gradlew clean build -x test --continue
 
-      - name: List build artifacts before upload
+      - name: List built artifacts
         run: |
-          echo "Checking for JAR files:"
-          find . -name "*.jar" -type f | head -20
+          echo "Built JARs in worldedit-bukkit:"
+          ls -la worldedit-bukkit/build/libs/
+          echo ""
+          echo "Built JARs in worldedit-fabric:"
+          ls -la worldedit-fabric/build/libs/
+          echo ""
+          echo "Built JARs in worldedit-forge:"
+          ls -la worldedit-forge/build/libs/
+          echo ""
+          echo "Built JARs in worldedit-mod:"
+          ls -la worldedit-mod/build/libs/
+          echo ""
+          echo "Built JARs in worldedit-sponge:"
+          ls -la worldedit-sponge/build/libs/
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload Bukkit Release Asset
+        uses: AButler/upload-release-assets@v3.0
         with:
-          name: worldedit-build
-          path: |
-            worldedit-bukkit/build/libs/*.jar
-            worldedit-fabric/build/libs/*.jar
-            worldedit-forge/build/libs/*.jar
-            worldedit-mod/build/libs/*.jar
-            worldedit-sponge/build/libs/*.jar
-          retention-days: 30
+          files: 'worldedit-bukkit/build/libs/FastAsyncWorldEdit-*.jar'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
+      - name: Upload Fabric Release Asset
+        uses: AButler/upload-release-assets@v3.0
         with:
-          name: worldedit-build
-          path: build-artifacts
+          files: 'worldedit-fabric/build/libs/FastAsyncWorldEdit-*.jar'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: List downloaded artifacts
-        run: |
-          echo "Downloaded artifacts:"
-          ls -la build-artifacts/
-          find build-artifacts -name "*.jar" -type f | head -20
-
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v2
+      - name: Upload Forge Release Asset
+        uses: AButler/upload-release-assets@v3.0
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-          files: build-artifacts/*.jar
+          files: 'worldedit-forge/build/libs/FastAsyncWorldEdit-*.jar'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Mod Release Asset
+        uses: AButler/upload-release-assets@v3.0
+        with:
+          files: 'worldedit-mod/build/libs/FastAsyncWorldEdit-*.jar'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Sponge Release Asset
+        uses: AButler/upload-release-assets@v3.0
+        with:
+          files: 'worldedit-sponge/build/libs/FastAsyncWorldEdit-*.jar'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
