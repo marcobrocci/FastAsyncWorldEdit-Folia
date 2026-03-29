@@ -46,6 +46,15 @@ jobs:
           echo "=== WorldEdit Sponge JARs ==="
           find worldedit-sponge/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No sponge build dir"
 
+      - name: Prepare Folia JAR (rename Paper JAR to Folia)
+        run: |
+          if [ -f "worldedit-bukkit/build/libs/FastAsyncWorldEdit-Paper-${{ github.ref_name }}.jar" ]; then
+            cp "worldedit-bukkit/build/libs/FastAsyncWorldEdit-Paper-${{ github.ref_name }}.jar" "worldedit-bukkit/build/libs/FastAsyncWorldEdit-Folia-${{ github.ref_name }}.jar"
+            echo "Created Folia JAR: worldedit-bukkit/build/libs/FastAsyncWorldEdit-Folia-${{ github.ref_name }}.jar"
+          else
+            echo "Paper JAR not found, skipping Folia JAR creation"
+          fi
+
       - name: Upload all Bukkit JARs as release assets
         uses: AButler/upload-release-assets@v3.0
         with:
