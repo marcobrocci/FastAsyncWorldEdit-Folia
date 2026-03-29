@@ -48,9 +48,12 @@ jobs:
 
       - name: Prepare Folia JAR (rename Paper JAR to Folia)
         run: |
-          if [ -f "worldedit-bukkit/build/libs/FastAsyncWorldEdit-Paper-${{ github.ref_name }}.jar" ]; then
-            cp "worldedit-bukkit/build/libs/FastAsyncWorldEdit-Paper-${{ github.ref_name }}.jar" "worldedit-bukkit/build/libs/FastAsyncWorldEdit-Folia-${{ github.ref_name }}.jar"
-            echo "Created Folia JAR: worldedit-bukkit/build/libs/FastAsyncWorldEdit-Folia-${{ github.ref_name }}.jar"
+          # Find the Paper JAR file and create a Folia variant
+          PAPER_JAR=$(find worldedit-bukkit/build/libs -name "FastAsyncWorldEdit-Paper-*.jar" | head -1)
+          if [ -n "$PAPER_JAR" ]; then
+            FOLIA_JAR="${PAPER_JAR/Paper/Folia}"
+            cp "$PAPER_JAR" "$FOLIA_JAR"
+            echo "Created Folia JAR: $FOLIA_JAR"
           else
             echo "Paper JAR not found, skipping Folia JAR creation"
           fi
