@@ -54,14 +54,9 @@ jobs:
             ls -la worldedit-bukkit/build/libs/*.jar 2>/dev/null || echo "No JARs found"
           fi
 
-      - name: List files in current release
-        run: |
-          echo "=== Checking existing release assets ==="
-          # Get list of already uploaded assets to avoid duplicates
-          ASSETS=$(gh release view ${{ github.ref_name }} --json assets -q '.assets[].name' 2>/dev/null || echo "")
-          echo "Existing assets: $ASSETS"
-
       - name: Upload Bukkit JARs (skip if already exists)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           for jar in worldedit-bukkit/build/libs/*.jar; do
             if [ -f "$jar" ]; then
@@ -77,6 +72,8 @@ jobs:
           done
 
       - name: Upload Folia JAR (skip if already exists)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           for jar in worldedit-bukkit/build/libs/FastAsyncWorldEdit-Folia-*.jar; do
             if [ -f "$jar" ]; then
