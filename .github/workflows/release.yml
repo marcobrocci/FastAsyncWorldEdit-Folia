@@ -29,24 +29,40 @@ jobs:
       - name: Find and list all built JAR files
         run: |
           echo "=== All built JAR files ==="
-          find . -name "*.jar" -path "*/build/libs/*" -type f | sort
+          find . -name "*.jar" -path "*/build/libs/*" -type f | sort || true
           echo ""
-          echo "=== WorldEdit Bukkit JARs ==="
-          find worldedit-bukkit/build/libs -name "*.jar" -type f | sort
-          echo ""
-          echo "=== WorldEdit Fabric JARs ==="
-          find worldedit-fabric/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No fabric build dir"
-          echo ""
-          echo "=== WorldEdit Forge JARs ==="
-          find worldedit-forge/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No forge build dir"
-          echo ""
-          echo "=== WorldEdit Mod JARs ==="
-          find worldedit-mod/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No mod build dir"
-          echo ""
-          echo "=== WorldEdit Sponge JARs ==="
-          find worldedit-sponge/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No sponge build dir"
 
-      - name: Prepare Folia JAR (rename Paper JAR to Folia)
+      - name: List WorldEdit Bukkit JARs
+        run: |
+          echo "=== WorldEdit Bukkit JARs ==="
+          find worldedit-bukkit/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No bukkit build dir or no JARs found"
+          echo ""
+
+      - name: List WorldEdit Fabric JARs
+        run: |
+          echo "=== WorldEdit Fabric JARs ==="
+          find worldedit-fabric/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No fabric build dir or no JARs found"
+          echo ""
+
+      - name: List WorldEdit Forge JARs
+        run: |
+          echo "=== WorldEdit Forge JARs ==="
+          find worldedit-forge/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No forge build dir or no JARs found"
+          echo ""
+
+      - name: List WorldEdit Mod JARs
+        run: |
+          echo "=== WorldEdit Mod JARs ==="
+          find worldedit-mod/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No mod build dir or no JARs found"
+          echo ""
+
+      - name: List WorldEdit Sponge JARs
+        run: |
+          echo "=== WorldEdit Sponge JARs ==="
+          find worldedit-sponge/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No sponge build dir or no JARs found"
+          echo ""
+
+      - name: Prepare Folia JAR (create Folia variant from Paper JAR)
         run: |
           # Find the Paper JAR file and create a Folia variant
           PAPER_JAR=$(find worldedit-bukkit/build/libs -name "FastAsyncWorldEdit-Paper-*.jar" | head -1)
@@ -54,8 +70,12 @@ jobs:
             FOLIA_JAR="${PAPER_JAR/Paper/Folia}"
             cp "$PAPER_JAR" "$FOLIA_JAR"
             echo "Created Folia JAR: $FOLIA_JAR"
+            ls -la "$FOLIA_JAR"
           else
             echo "Paper JAR not found, skipping Folia JAR creation"
+            # List what we do have for debugging
+            echo "Available Bukkit JARs:"
+            ls -la worldedit-bukkit/build/libs/*.jar 2>/dev/null || echo "No JARs found"
           fi
 
       - name: Upload all Bukkit JARs as release assets
