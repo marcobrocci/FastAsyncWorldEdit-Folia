@@ -5,10 +5,10 @@ on:
     types: [published]
 
 jobs:
-  build:
+  build_and_upload:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write  # Needed to upload release assets
     steps:
       - uses: actions/checkout@v4
 
@@ -22,64 +22,62 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Build Bukkit module (focus on what we need for release)
+      - name: Build with Gradle
+        # We'll build what we can and look for the actual outputs
+        run: ./gradlew clean build -x test --continue || echo "Build completed with some errors, continuing to check for built artifacts"
+
+      - name: Find and list all built JAR files
         run: |
-          echo "Building worldedit-bukkit module..."
-          ./gradlew :worldedit-bukkit:shadowJar :worldedit-bukkit:reobfShadowJar --no-daemon --continue || echo "Some tasks failed, continuing to check for built jars"
-          
-          echo "Checking built JARs:"
+          echo "=== All built JAR files ==="
+          find . -name "*.jar" -path "*/build/libs/*" -type f | sort
+          echo ""
+          echo "=== WorldEdit Bukkit JARs ==="
           find worldedit-bukkit/build/libs -name "*.jar" -type f | sort
+          echo ""
+          echo "=== WorldEdit Fabric JARs ==="
+          find worldedit-fabric/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No fabric build dir"
+          echo ""
+          echo "=== WorldEdit Forge JARs ==="
+          find worldedit-forge/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No forge build dir"
+          echo ""
+          echo "=== WorldEdit Mod JARs ==="
+          find worldedit-mod/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No mod build dir"
+          echo ""
+          echo "=== WorldEdit Sponge JARs ==="
+          find worldedit-sponge/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No sponge build dir"
 
-      - name: List all built artifacts for debugging
-        run: |
-          echo "=== Bukkit ==="
-          ls -la worldedit-bukkit/build/libs/
-          echo "=== Fabric ==="
-          ls -la worldedit-fabric/build/libs/ 2>/dev/null || echo "Fabric build dir not found"
-          echo "=== Forge ==="
-          ls -la worldedit-forge/build/libs/ 2>/dev/null || echo "Forge build dir not found"
-          echo "=== Mod ==="
-          ls -la worldedit-mod/build/libs/ 2>/dev/null || echo "Mod build dir not found"
-          echo "=== Sponge ==="
-          ls -la worldedit-sponge/build/libs/ 2>/dev/null || echo "Sponge build dir not found"
-
-      - name: Create Release (if it doesn't exist yet)
-        # This step is actually redundant since we're triggered on release.published
-        # but we'll keep it for safety
-        run: echo "Release already exists, proceeding to upload assets"
-
-      - name: Upload Bukkit Release Assets
+      - name: Upload all Bukkit JARs as release assets
         uses: AButler/upload-release-assets@v3.0
         with:
-          files: 'worldedit-bukkit/build/libs/FastAsyncWorldEdit-*.jar'
+          files: 'worldedit-bukkit/build/libs/*.jar'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          # Don't fail if no files match
+          # Continue even if no files match
           continue-on-error: true
 
-      - name: Upload Fabric Release Assets
+      - name: Upload all Fabric JARs as release assets
         uses: AButler/upload-release-assets@v3.0
         with:
-          files: 'worldedit-fabric/build/libs/FastAsyncWorldEdit-*.jar'
+          files: 'worldedit-fabric/build/libs/*.jar'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           continue-on-error: true
 
-      - name: Upload Forge Release Assets
+      - name: Upload all Forge JARs as release assets
         uses: AButler/upload-release-assets@v3.0
         with:
-          files: 'worldedit-forge/build/libs/FastAsyncWorldEdit-*.jar'
+          files: 'worldedit-forge/build/libs/*.jar'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           continue-on-error: true
 
-      - name: Upload Mod Release Assets
+      - name: Upload all Mod JARs as release assets
         uses: AButler/upload-release-assets@v3.0
         with:
-          files: 'worldedit-mod/build/libs/FastAsyncWorldEdit-*.jar'
+          files: 'worldedit-mod/build/libs/*.jar'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           continue-on-error: true
 
-      - name: Upload Sponge Release Assets
+      - name: Upload all Sponge JARs as release assets
         uses: AButler/upload-release-assets@v3.0
         with:
-          files: 'worldedit-sponge/build/libs/FastAsyncWorldEdit-*.jar'
+          files: 'worldedit-sponge/build/libs/*.jar'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           continue-on-error: true
