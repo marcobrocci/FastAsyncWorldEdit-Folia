@@ -38,30 +38,6 @@ jobs:
           find worldedit-bukkit/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No bukkit build dir or no JARs found"
           echo ""
 
-      - name: List WorldEdit Fabric JARs
-        run: |
-          echo "=== WorldEdit Fabric JARs ==="
-          find worldedit-fabric/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No fabric build dir or no JARs found"
-          echo ""
-
-      - name: List WorldEdit Forge JARs
-        run: |
-          echo "=== WorldEdit Forge JARs ==="
-          find worldedit-forge/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No forge build dir or no JARs found"
-          echo ""
-
-      - name: List WorldEdit Mod JARs
-        run: |
-          echo "=== WorldEdit Mod JARs ==="
-          find worldedit-mod/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No mod build dir or no JARs found"
-          echo ""
-
-      - name: List WorldEdit Sponge JARs
-        run: |
-          echo "=== WorldEdit Sponge JARs ==="
-          find worldedit-sponge/build/libs -name "*.jar" -type f 2>/dev/null | sort || echo "No sponge build dir or no JARs found"
-          echo ""
-
       - name: Prepare Folia JAR (create Folia variant from Paper JAR)
         run: |
           # Find the Paper JAR file and create a Folia variant
@@ -78,38 +54,39 @@ jobs:
             ls -la worldedit-bukkit/build/libs/*.jar 2>/dev/null || echo "No JARs found"
           fi
 
-      - name: Upload all Bukkit JARs as release assets
-        uses: AButler/upload-release-assets@v3.0
-        with:
-          files: 'worldedit-bukkit/build/libs/*.jar'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          # Continue even if no files match
-          continue-on-error: true
+      - name: List files in current release
+        run: |
+          echo "=== Checking existing release assets ==="
+          # Get list of already uploaded assets to avoid duplicates
+          ASSETS=$(gh release view ${{ github.ref_name }} --json assets -q '.assets[].name' 2>/dev/null || echo "")
+          echo "Existing assets: $ASSETS"
 
-      - name: Upload all Fabric JARs as release assets
-        uses: AButler/upload-release-assets@v3.0
-        with:
-          files: 'worldedit-fabric/build/libs/*.jar'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          continue-on-error: true
+      - name: Upload Bukkit JARs (skip if already exists)
+        run: |
+          for jar in worldedit-bukkit/build/libs/*.jar; do
+            if [ -f "$jar" ]; then
+              filename=$(basename "$jar")
+              echo "Checking if $filename already exists in release..."
+              if gh release view ${{ github.ref_name }} --json assets -q ".assets[].name" 2>/dev/null | grep -q "$filename"; then
+                echo "Asset $filename already exists in release, skipping upload"
+              else
+                echo "Uploading $filename to release..."
+                gh release upload ${{ github.ref_name }} "$jar" --clobber
+              fi
+            fi
+          done
 
-      - name: Upload all Forge JARs as release assets
-        uses: AButler/upload-release-assets@v3.0
-        with:
-          files: 'worldedit-forge/build/libs/*.jar'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          continue-on-error: true
-
-      - name: Upload all Mod JARs as release assets
-        uses: AButler/upload-release-assets@v3.0
-        with:
-          files: 'worldedit-mod/build/libs/*.jar'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          continue-on-error: true
-
-      - name: Upload all Sponge JARs as release assets
-        uses: AButler/upload-release-assets@v3.0
-        with:
-          files: 'worldedit-sponge/build/libs/*.jar'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          continue-on-error: true
+      - name: Upload Folia JAR (skip if already exists)
+        run: |
+          for jar in worldedit-bukkit/build/libs/FastAsyncWorldEdit-Folia-*.jar; do
+            if [ -f "$jar" ]; then
+              filename=$(basename "$jar")
+              echo "Checking if $filename already exists in release..."
+              if gh release view ${{ github.ref_name }} --json assets -q ".assets[].name" 2>/dev/null | grep -q "$filename"; then
+                echo "Asset $filename already exists in release, skipping upload"
+              else
+                echo "Uploading $filename to release..."
+                gh release upload ${{ github.ref_name }} "$jar" --clobber
+              fi
+            fi
+          done
